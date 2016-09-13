@@ -408,6 +408,8 @@ extern signed long schedule_timeout_uninterruptible(signed long timeout);
 asmlinkage void schedule(void);
 extern void schedule_preempt_disabled(void);
 
+void __noreturn do_task_dead(void);
+
 struct nsproxy;
 struct user_namespace;
 
