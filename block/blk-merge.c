@@ -559,6 +559,9 @@ static int attempt_merge(struct request_queue *q, struct request *req,
 	    !blk_write_same_mergeable(req->bio, next->bio))
 		return 0;
 
+	if (req->ioprio != next->ioprio)
+		return 0;
+
 	/*
 	 * If we are allowed to merge, then append bio list
 	 * from next to rq and release next. merge_requests_fn
@@ -602,7 +605,6 @@ static int attempt_merge(struct request_queue *q, struct request *req,
 	 */
 	blk_account_io_merge(next);
 
-	req->ioprio = ioprio_best(req->ioprio, next->ioprio);
 	if (blk_rq_cpu_valid(next))
 		req->cpu = next->cpu;
 
@@ -674,7 +676,7 @@ bool blk_rq_merge_ok(struct request *rq, struct bio *bio)
 	}
 
 	/* Don't merge bios of files with different encryption */
-	if (!security_allow_merge_bio(rq->bio, bio))
+	if (!security_allow_merge_bio(rq->bio, bio) || rq->ioprio != bio_prio(bio))
 		return false;
 
 	return true;
