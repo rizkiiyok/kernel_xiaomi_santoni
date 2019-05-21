@@ -35,10 +35,6 @@
 
 #define VSYNC_DELAY msecs_to_jiffies(17)
 
-<<<<<<< HEAD
-=======
-extern char Lcm_name[HARDWARE_MAX_ITEM_LONGTH];
-
 bool display_on = true;
 
 bool is_display_on()
@@ -46,7 +42,6 @@ bool is_display_on()
 	return display_on;
 }
 
->>>>>>> c4e9004437e4... display: add a simple api to query the display state (on/off) at any point in time
 DEFINE_LED_TRIGGER(bl_led_trigger);
 
 void mdss_dsi_panel_pwm_cfg(struct mdss_dsi_ctrl_pdata *ctrl)
