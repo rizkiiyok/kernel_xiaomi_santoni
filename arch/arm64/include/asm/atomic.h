@@ -89,6 +89,20 @@ ATOMIC_OPS(sub, sub)
 #undef ATOMIC_OP_RETURN
 #undef ATOMIC_OP
 
+static inline void atomic_andnot(unsigned long mask, atomic_t *addr)
+{
+	unsigned long tmp, tmp2;
+
+	asm volatile("// atomic_clear_mask\n"
+"1:	ldxr	%0, %2\n"
+"	bic	%0, %0, %3\n"
+"	stxr	%w1, %0, %2\n"
+"	cbnz	%w1, 1b"
+	: "=&r" (tmp), "=&r" (tmp2), "+Q" (*addr)
+	: "Ir" (mask)
+	: "cc");
+}
+
 static inline int atomic_cmpxchg(atomic_t *ptr, int old, int new)
 {
 	unsigned long tmp;
