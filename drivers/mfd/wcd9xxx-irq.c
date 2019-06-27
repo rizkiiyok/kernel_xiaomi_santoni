@@ -467,8 +467,6 @@ int wcd9xxx_irq_init(struct wcd9xxx_core_resource *wcd9xxx_res)
 {
 	int i, ret;
 	u8 *irq_level;
-	struct irq_domain *domain;
-	struct device_node *pnode;
 
 	mutex_init(&wcd9xxx_res->irq_lock);
 	mutex_init(&wcd9xxx_res->nested_irq_lock);

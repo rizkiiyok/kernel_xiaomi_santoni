@@ -235,8 +235,7 @@ int32_t msm_camera_qup_i2c_write_seq(struct msm_camera_i2c_client *client,
 		&& client->addr_type != MSM_CAMERA_I2C_WORD_ADDR)
 		|| num_byte == 0)
 		return rc;
-	buf = kzalloc((uint32_t)client->addr_type + (uint32_t)data_type,
-					GFP_KERNEL);
+	buf = kzalloc(client->addr_type+num_byte, GFP_KERNEL);
 
 	if (!buf)
 		return -ENOMEM;
