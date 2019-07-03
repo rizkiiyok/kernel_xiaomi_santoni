@@ -254,7 +254,6 @@ struct smbchg_chip {
 	struct smbchg_regulator		otg_vreg;
 	struct smbchg_regulator		ext_otg_vreg;
 	struct work_struct		usb_set_online_work;
-	struct delayed_work		period_update_work;
 	struct delayed_work		vfloat_adjust_work;
 	struct delayed_work		hvdcp_det_work;
 	spinlock_t			sec_access_lock;
@@ -448,7 +447,7 @@ module_param_named(
 	int, S_IRUSR | S_IWUSR
 );
 
-static int smbchg_default_hvdcp_icl_ma = 2000;
+static int smbchg_default_hvdcp_icl_ma = 2400;
 module_param_named(
 	default_hvdcp_icl_ma, smbchg_default_hvdcp_icl_ma,
 	int, S_IRUSR | S_IWUSR
@@ -460,7 +459,7 @@ module_param_named(
 	int, S_IRUSR | S_IWUSR
 );
 
-static int smbchg_default_dcp_icl_ma = 2000;
+static int smbchg_default_dcp_icl_ma = 2200;
 module_param_named(
 	default_dcp_icl_ma, smbchg_default_dcp_icl_ma,
 	int, S_IRUSR | S_IWUSR
@@ -7745,7 +7744,7 @@ static struct of_device_id smbchg_match_table[] = {
 };
 
 #define DC_MA_MIN 300
-#define DC_MA_MAX 2000
+#define DC_MA_MAX 2400
 #define OF_PROP_READ(chip, prop, dt_property, retval, optional)		\
 do {									\
 	if (retval)							\
@@ -7860,7 +7859,7 @@ err:
 }
 
 #define DEFAULT_VLED_MAX_UV		3500000
-#define DEFAULT_FCC_MA			2000
+#define DEFAULT_FCC_MA			2400
 static int smb_parse_dt(struct smbchg_chip *chip)
 {
 	int rc = 0, ocp_thresh = -EINVAL;
@@ -8476,105 +8475,6 @@ static int smbchg_check_chg_version(struct smbchg_chip *chip)
 	return 0;
 }
 
-static int period_ms = 0;
-static int set_period_ms(const char *val, struct kernel_param *kp)
-{
-	int ret;
-
-	ret = param_set_int(val, kp);
-	if (ret) {
-		pr_err("error setting value %d\n", ret);
-		return ret;
-	}
-	if (wt_chip) {
-		pr_info("set_period_ms to %d\n", period_ms);
-		cancel_delayed_work_sync(&wt_chip->period_update_work);
-		schedule_delayed_work(&wt_chip->period_update_work,
-				round_jiffies_relative(msecs_to_jiffies
-				(period_ms)));
-		return 0;
-	}
-	return -EINVAL;
-}
-module_param_call(period_ms, set_period_ms, param_get_uint,
-		&period_ms, 0644);
-
-#define LOW_SOC_HEARTBEAT_MS	20000
-#define HEARTBEAT_MS	60000
-#define OFFCHG_FORCE_POWEROFF_DELTA HZ*60*10
-#define NORMAL_FORCE_POWEROFF_DELTA HZ*60*1
-static void period_update(struct work_struct *work)
-{
-	struct delayed_work *dwork = to_delayed_work(work);
-	struct smbchg_chip *chip = container_of(dwork,
-			struct smbchg_chip, period_update_work);
-
-	int period = 500;
-	int temp, voltage, cap, status, charge_type, present, chg_current, usb_present, usb_current;
-	static int old_temp = 0;
-	static int old_cap = 0;
-	static int old_status = 0;
-	static int old_present = 0;
-	static int old_usb_present = 0;
-	static int printk_counter = 0;
-
-	union power_supply_propval prop = {0,};
-	int vbus;
-
-	if (chip == NULL) {
-		pr_err("pmic fatal error:the_chip=null\n!!");
-		return;
-	}
-
-	if (smbchg_debug_mask == 0xFF)
-		dump_regs(chip);
-
-	temp		=	get_prop_batt_temp(chip)/10;
-	voltage		=	get_prop_batt_voltage_now(chip)/1000;
-	cap			=	get_prop_batt_capacity(chip);
-	status		=	get_prop_batt_status(chip);
-	charge_type	=	get_prop_charge_type(chip);
-	present		=	get_prop_batt_present(chip);
-	chg_current	=	get_prop_batt_current_now(chip);
-	usb_present	=	is_usb_present(chip);
-	usb_current	=	smbchg_get_iusb(chip);
-
-	chip->usb_psy->get_property(chip->usb_psy, POWER_SUPPLY_PROP_VOLTAGE_NOW, &prop);
-	vbus = prop.intval;
-
-	printk_counter++;
-	if ((period_ms >= 500) || (abs(temp-old_temp) >= 1) || (old_cap != cap) || (old_status != status)
-			|| (old_present != present) || (old_usb_present != usb_present) || (printk_counter >= 5)) {
-		pr_info("***temp=%d,vol=%d,cap=%d,status=%d,chg_state=%d,current=%d,present=%d,usb_present=%d\n",
-				temp, voltage, cap, status, charge_type, chg_current, present, usb_present);
-
-		pr_info("***present=%d,usb_present=%d,usb_current=%d, Vbus=%d\n",
-				present, usb_present, usb_current, vbus);
-
-		old_temp = temp;
-		old_cap = cap;
-		old_status = status;
-		old_present = present;
-		old_usb_present = usb_present;
-		printk_counter = 0;
-	}
-
-	power_supply_changed(&chip->batt_psy);
-
-	if (period_ms >= 500) {
-		period = period_ms;
-	} else {
-		if (cap <= 5)
-			period = LOW_SOC_HEARTBEAT_MS;
-		else
-			period = HEARTBEAT_MS;
-	}
-
-	schedule_delayed_work(&chip->period_update_work,
-		round_jiffies_relative(msecs_to_jiffies
-		(period)));
-}
-
 static void rerun_hvdcp_det_if_necessary(struct smbchg_chip *chip)
 {
 	enum power_supply_type usb_supply_type;
@@ -8768,7 +8668,6 @@ static int smbchg_probe(struct spmi_device *spmi)
 	}
 
 	INIT_WORK(&chip->usb_set_online_work, smbchg_usb_update_online_work);
-	INIT_DELAYED_WORK(&chip->period_update_work, period_update);
 	INIT_DELAYED_WORK(&chip->parallel_en_work,
 			smbchg_parallel_usb_en_work);
 	INIT_DELAYED_WORK(&chip->vfloat_adjust_work, smbchg_vfloat_adjust_work);
@@ -8917,8 +8816,6 @@ static int smbchg_probe(struct spmi_device *spmi)
 			chip->revision[ANA_MAJOR], chip->revision[ANA_MINOR],
 			get_prop_batt_present(chip),
 			chip->dc_present, chip->usb_present);
-	schedule_delayed_work(&chip->period_update_work,
-			round_jiffies_relative(msecs_to_jiffies(HEARTBEAT_MS)));
 
 	return 0;
 
