@@ -548,14 +548,6 @@ static size_t i2c_msm_fifo_xfer_wr_tag(struct i2c_msm_ctrl *ctrl)
 	struct i2c_msm_xfer_buf *buf = &ctrl->xfer.cur_buf;
 	size_t len = 0;
 
-	if (ctrl->dbgfs.dbg_lvl >= MSM_DBG) {
-		char str[I2C_MSM_REG_2_STR_BUF_SZ];
-		dev_info(ctrl->dev, "tag.val:0x%llx tag.len:%d %s\n",
-			buf->out_tag.val, buf->out_tag.len,
-			i2c_msm_dbg_tag_to_str(&buf->out_tag, str,
-								sizeof(str)));
-	}
-
 	if (buf->out_tag.len) {
 		len = i2c_msm_fifo_wr_buf(ctrl, (u8 *) &buf->out_tag.val,
 							buf->out_tag.len);
@@ -604,13 +596,6 @@ static void i2c_msm_fifo_read_xfer_buf(struct i2c_msm_ctrl *ctrl)
 			word_bc         -= copy_bc;
 			buf->in_tag.len -= copy_bc;
 
-			if ((ctrl->dbgfs.dbg_lvl >= MSM_DBG) &&
-							!buf->in_tag.len) {
-				char str[64];
-				dev_info(ctrl->dev, "%s\n",
-					i2c_msm_dbg_tag_to_str(&buf->in_tag,
-							str, sizeof(str)));
-			}
 		}
 
 		/* copy bytes from fifo word to user's buffer */

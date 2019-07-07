@@ -2872,8 +2872,6 @@ static struct device_node *mdss_dsi_find_panel_of_node(
 				panel_cfg, str1);
 			str1 = strnstr(str1, ctrl_id_stream, len);
 			if (!str1) {
-				pr_err("%s: 2. controller %s is not present in %s\n",
-					__func__, ctrl_id_stream, str1);
 				goto end;
 			}
 		}
