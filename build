@@ -27,7 +27,7 @@ if [ ! -f output/arch/arm64/boot/Image.gz ]; then
     curl -F chat_id="665641885" -F text="Build throw an error(s)" https://api.telegram.org/bot698235574:AAGpwfSHtl669jA2JP2nhycee5ZdyM0SmD4/sendMessage &> /dev/null
 else
 CTIME=$(date +'%m%d-%H%M')
-cp output/arch/arm64/boot/Image.gz AnyKernel3/zImage
+cp output/arch/arm64/boot/Image.gz-dtb AnyKernel3/zImage
 cd AnyKernel3 || exit
 rm -rf *.zip
 zip -r9 "zEAS-${CTIME}.zip" * -x README.md &> /dev/null
