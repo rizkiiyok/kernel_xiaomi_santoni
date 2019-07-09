@@ -220,11 +220,11 @@
 			compatible = "sched-energy";
 			CPU_COST_0: core-cost0 {
 				busy-cost-data = <
-					702	481
-					800	625
-					884	763
-					913	813
-					983	943
+					702	482
+					800	626
+					884	764
+					913	814
+					983	944
 					1024	1024
 				>;
 				idle-cost-data = <
@@ -233,10 +233,10 @@
 			};
 			CPU_COST_1: core-cost1 {
 				busy-cost-data = <
-					511	280
-					601	387
-					664	473
-					728	569
+					511	274
+					601	388
+					664	474
+					728	570
 				>;
 				idle-cost-data = <
 					40 20 10 8
