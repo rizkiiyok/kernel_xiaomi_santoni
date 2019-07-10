@@ -199,7 +199,7 @@ queue_show_##name(struct request_queue *q, char *page)			\
 	bit = test_bit(QUEUE_FLAG_##flag, &q->queue_flags);		\
 	return queue_var_show(neg ? !bit : bit, page);			\
 }									\
-static ssize_t								\
+static ssize_t __maybe_unused						\
 queue_store_##name(struct request_queue *q, const char *page, size_t count) \
 {									\
 	unsigned long val;						\
